@@ -8,6 +8,8 @@ import requests
 import numpy as np
 import pandas as pd
 import math
+import os
+import env
 
 def get_api_resources(root_url):
     '''
@@ -59,5 +61,35 @@ def get_germany_ops_data():
     url='https://raw.githubusercontent.com/jenfly/opsd/master/opsd_germany_daily.csv'
     df = pd.read_csv(url)
     return df
-    
 
+
+def get_db_url(database):
+    return f'mysql+pymysql://{env.user}:{env.password}@{env.host}/{database}'
+
+
+def get_store_data():
+    '''
+    Returns a dataframe of all store data in the tsa_item_demand database and saves a local copy as a csv file.
+    '''
+    query = '''
+    SELECT *
+    FROM items
+    JOIN sales USING(item_id)
+    JOIN stores USING(store_id) 
+    '''
+    
+    df = pd.read_sql(query, get_db_url('tsa_item_demand'))
+    
+    df.to_csv('tsa_item_demand.csv', index=False)
+    
+    return df
+    
+def wrangle_store_data():
+    filename = 'tsa_item_demand.csv'
+    
+    if os.path.isfile(filename):
+        df = pd.read_csv(filename, index_col=0)
+    else:
+        df = get_store_data()
+        
+    return df
